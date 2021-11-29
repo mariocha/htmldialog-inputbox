@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="../vendor/bootstrap/css/bootstrap.css" rel="stylesheet">
+  <script src="../vendor/jquery.js"></script>
+  <script src="../vendor/popper.js"></script>
+  <script src="../vendor/bootstrap/js/bootstrap.js"></script>
+  <script src="../vendor/vue.js"></script>
+  <style>
+    /* Applying a global zoom to scale down the default size of Bootstrap. */
+    html { zoom: 0.8; }
+    /* Bootstrap cause a scrollbar for some reason when it should not. */
+    body { overflow: hidden; }
+    /* Position a footer at the bottom of the dialog. */
+    .footer {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      text-align: right;
+      background: #fff;
+      border-top: 1px solid #ccc;
+      padding: 1em;
+      margin: 0;
+    }
+    /* Give the buttons some even width. */
+    .footer button {
+      min-width: 6em;
+    }
+  </style>
+</head>
+<body>
+
+	<div style="position: absolute; left: 25px; top:10px;">
+	  <img src="../Resources/images/F3D.svg" alt="" id='img' style="height: 30px; width: 30px; " />
+	</div>  <br> <br>
+
+  <div id="app" v-on:keyup.enter="accept" v-on:keyup.esc="cancel" class="container-fluid">
+    <form class="form-horizontal">
+      <component class="row form-group"
+          v-bind:is="'su-' + input.type"
+          v-bind:control-id.once="controlId(index)"
+          v-bind:index="index"
+          v-bind:input="input" v-for="(input, index) in options.inputs">
+      </component>
+    </form>
+    <p class="footer">
+      <button class="btn btn-primary" v-on:click="accept">
+        {{ options.accept_button }}
+      </button>
+    </p>
+  </div>
+
+  <script>
+    const KEY_RETURN = 13;
+    const KEY_ESC = 27;
+
+   Vue.component('su-message', {
+      props: ['index', 'controlId', 'input'],
+      template: `
+        <div>
+          <label
+              class="col-sm-3 control-label"
+              v-bind:for.once="controlId">{{ input.label }}: </label>
+        </div>
+      `
+    });
+
+    let app = new Vue({
+      el: '#app',
+      data: {
+        options: {
+          title: 'Untitled',
+          inputs: [],
+        },
+      },
+      methods: {
+        accept() {
+          let values = this.options.inputs.map((input) => {
+            return input.value;
+          });
+          sketchup.accept(values);
+        },
+        controlId(index) {
+          return `suInputControl${index}`;
+        },
+        globalKeyup(event) {
+          switch (event.keyCode) {
+            case KEY_ESC:
+              this.cancel();
+              break;
+            case KEY_RETURN:
+              // This will need adjustments if a <textarea> field is desired.
+              this.accept();
+              break;
+          }
+        }
+      },
+      mounted: function () {
+        // Capture global key events.
+        window.addEventListener('keyup', (event) => {
+          this.globalKeyup(event);
+        });
+        // Signal the Ruby side that the dialog is ready to be interacted with.
+        sketchup.ready();
+      }
+    });
+  </script>
+
+</body>
+</html>
